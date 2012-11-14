@@ -20,29 +20,38 @@ program: flash
 # rule for uploading firmware:
 flash: bin/main.hex
 	$(AVRDUDE) -U flash:w:bin/main.hex:i
+	
 source/firmware/%.o: source/firmware/%.c
-	$(AVR_COMPILE) -c $< -o $@
+	@echo "cc $<"
+	@$(AVR_COMPILE) -c $< -o $@
 source/firmware/%.o: source/firmware/%.S
-	$(AVR_COMPILE) -x assembler-with-cpp -c $< -o $@
+	@echo "as $<"
+	@$(AVR_COMPILE) -x assembler-with-cpp -c $< -o $@
 source/usbdrv/%.o: source/usbdrv/%.c
-	$(AVR_COMPILE) -c $< -o $@
+	@echo "cc $<"
+	@$(AVR_COMPILE) -c $< -o $@
 source/usbdrv/%.o: source/usbdrv/%.S
-	$(AVR_COMPILE) -x assembler-with-cpp -c $< -o $@
-bin/main.elf: $(AVR_OBJECTS)	
-	$(AVR_COMPILE) -o bin/main.elf $(AVR_OBJECTS)
+	@echo "as $<"
+	@$(AVR_COMPILE) -x assembler-with-cpp -c $< -o $@
+bin/main.elf: $(AVR_OBJECTS)
+	@echo "linking bin/main.elf"
+	@$(AVR_COMPILE) -o bin/main.elf $(AVR_OBJECTS)
 bin/main.hex: bin/main.elf
-	rm -f bin/main.hex bin/main.eep.hex
-	avr-objcopy -j .text -j .data -O ihex bin/main.elf bin/main.hex
-	avr-size bin/main.hex
+	@echo "linking bin/main.hex"
+	@rm -f bin/main.hex bin/main.eep.hex
+	@avr-objcopy -j .text -j .data -O ihex bin/main.elf bin/main.hex
+	@avr-size bin/main.hex
 disasm:	bin/main.elf
 	avr-objdump -d bin/main.elf
 
 #UCOM SECTION
 source/ucom/%.o: source/ucom/%.c
-	$(UCOM_COMPILE) -c $< -o $@
+	@echo "cc $<"
+	@$(UCOM_COMPILE) -c $< -o $@
 bin/ucom: $(UCOM_OBJECTS)
-	$(UCOM_COMPILE) $(UCOM_CLIBS) -o bin/ucom $(UCOM_OBJECTS)
+	@echo "linking bin/ucom"
+	@$(UCOM_COMPILE) $(UCOM_CLIBS) -o bin/ucom $(UCOM_OBJECTS)
 
 # rule for deleting dependent files (those which can be built by Make):
 clean:
-	rm -f bin/ucom source/ucom/*.o bin/main.hex bin/main.elf source/firmware/*.o source/usbdrv/*.o source/usbdrv/oddebug.s source/usbdrv/usbdrv.s
+	@rm -f bin/ucom source/ucom/*.o bin/main.hex bin/main.elf source/firmware/*.o source/usbdrv/*.o source/usbdrv/oddebug.s source/usbdrv/usbdrv.s

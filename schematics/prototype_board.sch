@@ -3330,7 +3330,7 @@ type RDH, grid 15 mm</description>
 <part name="R4" library="resistor" deviceset="R-EU_" device="0309/12" value="2k"/>
 <part name="R5" library="resistor" deviceset="R-EU_" device="0309/12" value="1k"/>
 <part name="R6" library="resistor" deviceset="R-EU_" device="0309/12" value="2k"/>
-<part name="C1" library="docu-dummy" deviceset="C" device=""/>
+<part name="C1" library="docu-dummy" deviceset="C" device="" value="16pF"/>
 <part name="R7" library="resistor" deviceset="R-EU_" device="0309/12" value="180"/>
 <part name="R8" library="resistor" deviceset="R-EU_" device="0309/12" value="180"/>
 <part name="R9" library="resistor" deviceset="R-EU_" device="0309/12" value="180"/>
