@@ -1,5 +1,5 @@
 #AVR VAR SECTION
-AVR_DEVICE  = atmega48
+AVR_DEVICE  = atmega644p
 AVR_F_CPU   = 20000000	# in Hz
 AVRDUDE = avrdude -c avrispmkII -P usb -u -p $(AVR_DEVICE) # edit this line for your programmer
 AVR_CFLAGS  = -Isource/usbdrv -Isource/firmware/ -DDEBUG_LEVEL=0
@@ -20,7 +20,7 @@ program: flash
 # rule for uploading firmware:
 flash: bin/main.hex
 	$(AVRDUDE) -U flash:w:bin/main.hex:i
-	
+   
 source/firmware/%.o: source/firmware/%.c
 	@echo "cc $<"
 	@$(AVR_COMPILE) -c $< -o $@
