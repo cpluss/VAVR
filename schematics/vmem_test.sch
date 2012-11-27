@@ -1179,6 +1179,7 @@ Based on the following sources:
 <text x="101.6" y="55.88" size="1.778" layer="91">GND</text>
 <text x="7.62" y="66.04" size="1.778" layer="91">Write</text>
 <text x="43.18" y="154.94" size="1.778" layer="91">GND</text>
+<text x="10.16" y="71.12" size="1.778" layer="91">Bank</text>
 </plain>
 <instances>
 <instance part="IC1" gate="G$1" x="-30.48" y="58.42"/>
@@ -1547,6 +1548,16 @@ Based on the following sources:
 <segment>
 <pinref part="R7" gate="G$1" pin="2"/>
 <wire x1="43.18" y1="175.26" x2="43.18" y2="154.94" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$40" class="0">
+<segment>
+<pinref part="IC2" gate="G$1" pin="A16"/>
+<wire x1="81.28" y1="66.04" x2="81.28" y2="60.96" width="0.1524" layer="91"/>
+<wire x1="81.28" y1="60.96" x2="20.32" y2="60.96" width="0.1524" layer="91"/>
+<wire x1="20.32" y1="60.96" x2="20.32" y2="71.12" width="0.1524" layer="91"/>
+<pinref part="IC1" gate="G$1" pin="(PCINT12/OC0B/!SS!)PB4"/>
+<wire x1="20.32" y1="71.12" x2="-5.08" y2="71.12" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
