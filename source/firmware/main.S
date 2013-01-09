@@ -3,8 +3,8 @@
 #define hsync   0       //PB0
 #define vsync   1       //PB1
 #define wrm     2       //PB2
-#define oem     3       //PB3
-#define rgbout  4       //PB4     
+#define rgbout  3       //PB4     
+
 #define vramL r19
 #define vramH r20
 
@@ -18,7 +18,6 @@ main:
     sbi DDRB, hsync
     sbi DDRB, vsync
     sbi DDRB, wrm
-    sbi DDRB, oem
     sbi DDRB, rgbout
 
     //Enable the output
@@ -76,7 +75,6 @@ main:
 */ 
 memtest:
     //Disable RAM output
-    sbi PORTB, oem
     //Disable RAM write for now
     sbi PORTB, wrm
 
@@ -100,7 +98,6 @@ inner:
     brne outer
 
     //Every cell should now contain 0xff, check if it is the case
-    cbi PORTB, oem
     sbi PORTB, wrm //just in case
     clr r17
     clr r18
@@ -122,22 +119,47 @@ inner2:
     brne outer2
 
     //Everything is fine!
-    //in A, PORTB
-    //sbrs A, bnk
+    in A, PORTB
+    sbrs A, bank
     rjmp mem_done
 
-    //sbi PORTB, bnk
-    //rjmp test
+    sbi PORTB, bank
+    rjmp memtest
 
 mem_error:
    rjmp memtest //Probably because the SRAM isn't initialized yet 
 mem_done:  
+
+    //Put 10x10 rectangle at (20,20)
+    ldi vramL, 20
+    ldi vramH, 20
+outer3:
+    ldi vramL, 20
+    out PORTD, vramH
+inner3:
+    out PORTC, vramL
+    ldi A, 0b00000011
+    out PORTA, A
+    cbi PORTB, wrm
+    nop
+    sbi PORTB, wrm
+
+    inc vramL
+    cpi vramL, 30
+    brne inner3
+    inc vramH
+    cpi vramH, 30
+    brne outer3
+
+
 	clr A
 	out DDRA, A
 	out PORTA, A
     sei
 
-    stop: rjmp stop     
+mainloop:
+    rjmp mainloop
+
 
 //Video interrupt
 // Horizontal Front Porch: 12 cycles
@@ -260,6 +282,13 @@ stillActivePixels:
     nop                                                  // (1)
     nop                                                  // (1)
     nop                                                  // (1)
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
 
     //Save our variables back to SRAM for next time
     st -X, r29           //Vertical line count low          (2)
@@ -272,7 +301,7 @@ stillActivePixels:
     //Horizontal back porch (24 cycles) -------------------------------------------  
 	                                                              
     //Let's prepare the RAM reading                               
-	cbi PORTB, oem      								 // (2)
+//	cbi PORTB, oem      								 // (2)
 	
     cpi r18, 0                                           // (1)
     brne wastetime                                       // (1 or 2)
@@ -818,11 +847,6 @@ doubleline:
 //Horizontal blanking (9 cycles)
     //disable the color signal to not confuse the monitor
     sbi PORTB, rgbout                                    // (2)
-    sbi PORTB, oem                                       // (2)  
-nop
-nop
-nop
-nop
     //restore status register    
     pop A                                                // (2)                            
     out SREG, A                                          // (1)

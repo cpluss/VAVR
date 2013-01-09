@@ -4,13 +4,16 @@ AVR_F_CPU   = 20000000	# in Hz
 AVRDUDE = avrdude -c avrispmkII -P usb -u -p $(AVR_DEVICE) # edit this line for your programmer
 AVR_CFLAGS  = -Isource/usbdrv -Isource/firmware/ -DDEBUG_LEVEL=0
 AVR_OBJECTS = $(patsubst %.c,%.o,$(wildcard source/firmware/*.c)) $(patsubst %.S,%.o,$(wildcard source/firmware/*.S)) #source/usbdrv/usbdrv.o source/usbdrv/usbdrvasm.o source/usbdrv/oddebug.o
-AVR_COMPILE = avr-gcc -Wall -Os -DF_CPU=$(AVR_F_CPU) $(AVR_CFLAGS) -mmcu=$(AVR_DEVICE)
+AVR_COMPILE = avr-gcc -Wall -Os -DF_CPU=$(AVR_F_CPU) $(AVR_CFLAGS) -mmcu=$(AVR_DEVICE)   
+AVR_FUSES = -U lfuse:w:0xf7:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m 
 
 #UCOM VAR SECTION
 UCOM_CFLAGS = -Isource/ucom
 UCOM_CLIBS = -lusb
 UCOM_COMPILE = gcc $(UCOM_CFLAGS) 
-UCOM_OBJECTS = $(patsubst %.c,%.o,$(wildcard source/ucom/*.c))
+UCOM_OBJECTS = $(patsubst %.c,%.o,$(wildcard source/ucom/*.c))  
+
+.PHONY: all clean hex program flash disasm fuses
 
 all: bin/main.hex  
 
@@ -19,7 +22,9 @@ hex: bin/main.hex
 program: flash
 # rule for uploading firmware:
 flash: bin/main.hex
-	$(AVRDUDE) -U flash:w:bin/main.hex:i
+	$(AVRDUDE) -U flash:w:bin/main.hex:i  
+fuses: 
+	$(AVRDUDE) $(AVR_FUSES)
    
 source/firmware/%.o: source/firmware/%.c
 	@echo "cc $<"
