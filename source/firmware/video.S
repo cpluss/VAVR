@@ -15,6 +15,7 @@
 .global vavr_clear
 .global vavr_swap
 .global vavr_putpixel
+.global vavr_readpixel
 
 /*
     Routine to init video routine.
@@ -79,59 +80,20 @@ vavr_clear:
     clr A
     clr B
     out PORTD, A
-    out PORTC, A
-
-    //Write as many pixels as possible ;)
-c0:
-    sbrc MR, 0
-    rjmp c0
-
-    out PORTD, A
+    out PORTC, B
     out PORTA, C
 
-    //Enable write
-    cbi PORTB, wrm
+    cbi PORTB, wrm //Write!
+outer:
+    clr B
+    out PORTD, A
+inner:
+    out PORTC, B
 
-    out PORTC, B 
     inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-    out PORTC, B
-    inc B
-
-    //Disable write
-    sbi PORTB, wrm
-
-    brne c0
+    brne inner
     inc A
-    cpi A, 240
-    brne c0
+    brne outer
 
     pop B
     pop A
@@ -163,8 +125,8 @@ vavr_swap:
     A - Y coordinate, B - X coordinate, C - color
 */
 vavr_putpixel:
-    sbrc MR, 0
-    rjmp vavr_putpixel
+;    sbrc MR, 0
+;    rjmp vavr_putpixel
 
     //Assign
     out PORTD, A
@@ -175,6 +137,26 @@ vavr_putpixel:
     cbi PORTB, wrm
     sbi PORTB, wrm
     ret
+/*
+    Routine to read a pixel of screen
+*/
+vavr_readpixel:
+    out PORTD, A
+    out PORTC, B
+    
+    push A
+    clr A
+    out DDRA, A
+    nop
+    in C, PINA
+    nop
+    ser A
+    out DDRA, A
+    pop A
+    ret
+
+
+
 
 /*
     Routine to wait for the memory ready flag (r25)
@@ -224,6 +206,7 @@ s4:
     cbi PORTB, hsync        // 2
 
     //Push registers to stack
+    push r18                // 2
     push r17                // 2
     push YL                 // 2
     push YH                 // 2
@@ -278,82 +261,71 @@ s4:
     pop YH                  // 2
     pop YL                  // 2
 
-    //Waste last time
-    nop                     // 1
-    nop                     // 1
-    nop
-    nop
-
     //horizontal sync pulse (active low)
     sbi PORTB, hsync        // 2
 
     //----> Back porch - 36 cycles (adjusted to 30 cycles for sync stability)
-    //Set vertical address
-    sbrc A, 2               // 1 or 2
-    out PORTD, r17          // 1
 
     //Set memory ready flag
-    sbrc A, 1               // 1 or 2
-    clr MR                  // 1
-    sbrs A, 1               // 1 or 2
-    ser MR                  // 1
-
-    //Pop registers from stack
-    pop r17                 // 2
+    ;sbrc A, 1               // 1 or 2
+    ;clr MR                  // 1
+    ;sbrs A, 1               // 1 or 2
+    ;ser MR                  // 1
 
     //Active line?
     sbrs A, 2               // 1 or 2
     rjmp no_v               // 2
 
-    //Release data bus
-    clr A                   // 1
-    out DDRA, A             // 1
+    //Save PORTD
+    in r18, PORTD           // 1
+    push r18                // 2
+    //Save PORTC
+    in r18, PORTC           // 1
+    push r18                // 2
+    //Save PORTA
+    in r18, PORTA           // 1
+    push r18                // 2
+
+    //In case we got interrupted in the middle
+    //of a SRAM write 
+    in r18, PORTB             // 1
+    sbrs r18, wrm             // 1 or 2
+    sbi PORTB, wrm            // 2
+    sbrc r18, wrm             // 1 or 2
+    rjmp s5                   // 2
+s5:
+    
+    //Set vertical address
+    sbrc A, 2               // 1 or 2
+    out PORTD, r17          // 1
+
+    //Set a flag depending if we should restore the write
+    //enable bit or not
+    mov A, r18
+    sbrs A, wrm             // 1 or 2
+    clr r18                 // 1
+    sbrc A, wrm             // 1 or 2
+    ser r18                 // 1
+
+    //----> pixels - 512 cycles
+    nop                     // 1
 
     //Set to front buffer
-    in A, PORTB             // 1
     sbrc A, bank            // 1 or 2
     cbi PORTB, bank         // 2
     sbrs A, bank            // 1 or 2
     sbi PORTB, bank         // 2
 
-    //Reset horizontal address
+    //Release data bus
     clr A                   // 1
+    out DDRA, A             // 1
+    //Reset horizontal address
     out PORTC, A            // 1
 
     //Set rgb buffer to output
-    cbi PORTB, rgbout         // 2
+    cbi PORTB, rgbout       // 2
 
-    //----> pixels - 512 cycles
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
-    inc A                   // 1
-    out PORTC, A            // 1
+    //240 Pixels ..
     inc A                   // 1
     out PORTC, A            // 1
     inc A                   // 1
@@ -839,7 +811,17 @@ s4:
 
     //Front porch again ...
     //Disable rgb buffer
-    sbi PORTB, rgbout         // 2
+    sbi PORTB, rgbout       // 2
+
+    //Restore PORTA
+    pop A                   // 2
+    out PORTA, A            // 1
+    //Restore PORTC
+    pop A                   // 2
+    out PORTC, A            // 1
+    //Restore PORTD
+    pop A                   // 2
+    out PORTD, A            // 1
 
     //Set to back buffer
     in A, PORTB             // 2
@@ -848,11 +830,27 @@ s4:
     sbrs A, bank            // 1 or 2
     sbi PORTB, bank         // 2
 
+    //Restore the write enable bit
+    sbrc r18, 0             // 1 or 2
+    cbi PORTB, wrm          // 2
+    sbrs r18, 1             // 1 or 2
+    sbi PORTB, wrm
+
+    ;nop                     // 1
+    ;nop                     // 1
+    ;nop                     // 1
+    ;nop                     // 1
+    ;nop
+    ;nop
+
     //Enable data bus
     ser A                   // 1
     out DDRA, A             // 1
 
 no_v:
+    //Pop registers from stack
+    pop r17                 // 2
+    pop r18                 // 2
     pop A                   // 2
     out SREG, A             // 1
     pop A                   // 2

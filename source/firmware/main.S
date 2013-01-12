@@ -28,7 +28,7 @@ main:
 
     cbi PORTB, bank
     
-    ser C
+    clr C
     cbi PORTB, bank
     rcall vavr_clear
     sbi PORTB, bank
@@ -38,10 +38,14 @@ main:
     cbi PORTB, led
 
     //Initialize beginning position
-    ldi A, 120
-    ldi B, 125
+    ldi A, 20
+    ldi B, 10
+    ldi r22, 0b00000001
 
-    clr B
+    mov r23, A
+    mov r24, B
+    mov r25, A
+    mov r26, B
 
 mainloop:	
     //Toggle led
@@ -50,14 +54,6 @@ mainloop:
     cbi PORTB, led
     sbrs D, led
 	sbi PORTB, led   
-	
-	//Delay
-	ldi  r22, 21
-    ldi  r23, 199
-L1: dec  r23
-    brne L1
-    dec  r22
-    brne L1
     
     rcall draw
     rjmp mainloop
@@ -66,26 +62,89 @@ L1: dec  r23
     Temporary snake routine to draw something ...
 */
 draw:
-    
-    //Draw the last one
-    push A
-    dec A
-    ser C
-    rcall draw_piece
-    pop A
+    ;clr C
+    ;rcall vavr_clear 
 
+    //Clear last position
+    push A
+    push B
+    clr C
+    mov A, r23
+    mov B, r24
+    rcall draw_piece
+    pop B
+    pop A
+    rcall draw_piece
+
+    //Save last positions ...
+    mov r23, A
+    mov r24, B
+    
+    //Handle A variable
+    sbrs r22, 0
+    rjmp Aincr
+    sbrc r22, 0
+    rjmp Adecr
+Aincr:
     inc A
-    ldi C, 0b00000100
-    ldi B, 125
+    inc A
+    inc A
+    rjmp l0
+Adecr:
+    dec A
+;    dec A
+;    dec A
+    rjmp l0
+
+l0:
+    cpi A, 235
+    brsh AtoggleDEC
+    cpi A, 5
+    brlo AtoggleINC
+    rjmp l1
+AtoggleINC:
+    andi r22, 0b11111110
+    rjmp l1
+AtoggleDEC:
+    ori r22, 1
+l1:
+    
+    //Handle B variable
+    sbrs r22, 1
+    rjmp Binc
+    sbrc r22, 1
+    rjmp Bdec
+Binc:
+    inc B
+;    inc B
+;    inc B
+;    inc B
+    rjmp l2
+Bdec:
+;    dec B
+;    dec B
+    dec B
+    dec B
+l2:
+    cpi B, 235
+    brsh BtoggleDEC
+    cpi B, 5
+    brlo BtoggleINC
+    rjmp l3
+BtoggleINC:
+    andi r22, 0b11111101
+    rjmp l3
+BtoggleDEC:
+    ori r22, 0b00000010
+l3:
+
+    //Draw new piece 
+    ldi C, 0b00000101
     rcall draw_piece
 
     ;Swap buffers ...
     rcall vavr_swap
     ret
-
-/*
-    Snake functions ...
-*/
 
 //Draws piece at (B, A) color C
 draw_piece:
@@ -94,6 +153,7 @@ draw_piece:
     push r24
     push r0
     push A
+    push B
 
     mov D, B    //Copy as reference
 
@@ -102,10 +162,7 @@ draw_piece:
     mov r24, A
     add r24, r0
 
-p0: //Wait for memory to become ready
-    sbrc MR, 0
-    rjmp p0 
-
+p0: 
     out PORTD, A
     out PORTA, C
     out PORTC, B
@@ -113,14 +170,14 @@ p0: //Wait for memory to become ready
     //Set to write
     cbi PORTB, wrm
 
-    //Draw 16 in length
+    //Draw 3 in length
     inc B
     out PORTC, B
     inc B
     out PORTC, B
-    inc B
-    out PORTC, B
-
+;    inc B
+;    out PORTC, B
+;
     //Disable write
     sbi PORTB, wrm
 
@@ -129,9 +186,8 @@ p0: //Wait for memory to become ready
     cp A, r24
     brne p0
 
+    pop B
     pop A
-    mov B, D
-
     pop r0
     pop r24
     pop D
