@@ -92,8 +92,8 @@ Aincr:
     rjmp l0
 Adecr:
     dec A
-;    dec A
-;    dec A
+    dec A
+    dec A
     rjmp l0
 
 l0:
@@ -116,13 +116,13 @@ l1:
     rjmp Bdec
 Binc:
     inc B
-;    inc B
-;    inc B
-;    inc B
+    inc B
+    inc B
+    inc B
     rjmp l2
 Bdec:
-;    dec B
-;    dec B
+    dec B
+    dec B
     dec B
     dec B
 l2:
